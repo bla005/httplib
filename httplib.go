@@ -9,21 +9,13 @@ import (
 	"go.uber.org/zap"
 )
 
-type httpResponse struct {
-	Code int         `json:"code"`
+type response struct {
+	Code int         `json:"-"`
 	Data interface{} `json:"data"`
 }
 
-func (r *httpResponse) String() string {
-	res, err := json.Marshal(r)
-	if err != nil {
-		return http.StatusText(http.StatusInternalServerError)
-	}
-	return string(res)
-}
-
-func newHttpResponse(code int, data interface{}) *httpResponse {
-	return &httpResponse{
+func newResponse(code int, data interface{}) *response {
+	return &response{
 		Code: code,
 		Data: data,
 	}
@@ -43,12 +35,12 @@ func New(logger *zap.Logger) *HTTPLib {
 
 // JSON responds to a request in json format
 func (l *HTTPLib) JSON(w http.ResponseWriter, code int, data interface{}) {
-	httpResp1 := newHttpResponse(code, data)
+	resp := newResponse(code, data)
 	w.WriteHeader(code)
-	if err := json.NewEncoder(w).Encode(httpResp1); err != nil {
-		httpResp1.Code = http.StatusInternalServerError
-		httpResp1.Data = http.StatusText(http.StatusInternalServerError)
-		http.Error(w, httpResp1.String(), http.StatusInternalServerError)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"data":"internal server error"}`))
+		// http.Error(w, `{"data":"internal server error"}`, http.StatusInternalServerError)
 		return
 	}
 }

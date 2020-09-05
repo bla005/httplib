@@ -6,37 +6,12 @@ import (
 	"go.uber.org/zap"
 )
 
-type event struct {
-	id      int
-	message string
-}
-
-type handlerLogger struct {
-	*zap.Logger
-}
-
-var (
-	badInput       = &event{1, "bad input"}
-	badCredentials = &event{2, "bad credentials"}
-	funcErr        = &event{3, "function error"}
-)
-
-func (l *HTTPLib) NewHandlerLogger(r *http.Request) *handlerLogger {
-	return &handlerLogger{
-		l.Logger.With(
-			zap.String("ip", l.ClientIP(r)),
-			zap.String("method", r.Method),
-			zap.String("path", r.URL.Path),
-			zap.String("user_agent", r.UserAgent()),
-		),
-	}
-}
-func (l *handlerLogger) BadInput() {
-	l.Info(badInput.message)
-}
-func (l *handlerLogger) BadCredentials() {
-	l.Info(badCredentials.message)
-}
-func (l *handlerLogger) FuncErr(err error) {
-	l.Error(funcErr.message, zap.Error(err))
+func (l *HTTPLib) LoggerWithFields(r *http.Request) *zap.Logger {
+	return l.Logger.With(
+		zap.String("ip", l.ClientIP(r)),
+		zap.String("method", r.Method),
+		zap.String("scheme", r.URL.Scheme),
+		zap.String("host", r.Host),
+		zap.String("path", r.URL.Path),
+	)
 }
